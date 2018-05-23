@@ -1,61 +1,71 @@
+#!/usr/bin/env python3.5
 
+import sys
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 import tldextract
 
 
-size = 0
-html = b''#initialize byte string
-
-# url = 'https://9to5google.com/2018/05/22/youtube-music-premium-launch/'
-url = 'https://www.cnn.com/politics/live-news/white-house-press-briefing-05-22-18/index.html'
-# url = 'https://gizmodo.com/razers-redesigned-blade-gaming-laptop-gets-bigger-burl-1826216941'
-# url = 'https://wordpress.stackexchange.com/questions/240629/how-can-i-link-users-across-multiple-subdomains'
-response = requests.get(url, stream=True)
-
-for chunk in response.iter_content():
-    size += len(chunk)
-    html += chunk
-
-domain = '{}.{}'.format(tldextract.extract(url).domain, tldextract.extract(url).suffix)
-print ('Domain: ',domain)
-
-soup = BeautifulSoup(html,'html.parser')
-# print(soup.prettify())
-links = []
-for link in soup.find_all('a'):
-    if link.get('href') is not None:
-        links.append(link.get('href'))
-    print(link.get('href'))
-
-print('--------------')
-
-domain_links = []
-for l in links:
-    # print(l)
-    if domain in urlparse(l)[1] or l.startswith('/'):
-        print(l)
-        domain_links.append(l)
-
-
-print('Size: {} bytes'.format(size))
-print(len(domain_links))
-print(tldextract.extract(url))
-
-def validate_url():
-    pass
-
-def get_size():
-    pass
-
-
-def get_links():
-    pass
+def get_links(html):
+    soup = BeautifulSoup(html,'html.parser')
+    # print(soup.prettify())
+    links = []
+    for link in soup.find_all('a'):
+        if link.get('href') is not None:
+            links.append(link.get('href'))
+        # print(link.get('href'))
+    return links
 
 
 def main():
-    pass
+    size = 0
+    html = b''#initialize byte string
+
+    #Code to get url as a commandline argument
+    #usage: ./task.py [url]
+    if len(sys.argv) == 2:
+        url = sys.argv[1]
+    elif len(sys.argv) > 2:
+        print('Wrong number of command line arguments')
+        print('Usage: ')
+        print('./task.py [url]')
+    else:
+        # url = 'https://www.cnn.com/politics/live-news/white-house-press-briefing-05-22-18/index.html'
+        url = 'https://httpstat.us/302'
+    
+    #Handle errors that may occur while fetching the webpage
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+        for chunk in response.iter_content():
+            size += len(chunk)
+            html += chunk
+    except requests.exceptions.HTTPError as err:
+        print ('HTTP Error: ',err)
+        sys.exit(1)
+    except requests.exceptions.RequestException as err:
+        print ('Request Exception Error: ',err)
+        sys.exit(1)
+
+    #extract domain name
+    domain = '{}.{}'.format(tldextract.extract(url).domain, tldextract.extract(url).suffix)
+    print ('Domain: ',domain)
+
+    #get all links from the webpage
+    links = get_links(html)
+
+    #filter links pointing to the same domain from list of all links in the webpage
+    domain_links = []
+    print('Links pointing to same domain: ')
+    for l in links:
+        if domain in urlparse(l)[1] or l.startswith('/'):
+            print(l)
+            domain_links.append(l)
+
+    print('Number of links pointing to same domain: ',len(domain_links))
+    print('Size of the webpage: {} bytes'.format(size))
+    # print(tldextract.extract(url))
 
 
 
