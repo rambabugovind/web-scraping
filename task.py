@@ -2,29 +2,23 @@
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+import tldextract
 
-# resp1 = requests.get('http://www.youtube.com')
-# print(len(resp1.content))
-# resp = requests.head('http://www.ramgov.com')
-# print(resp.headers['Content-Length'])
 
 size = 0
 html = b''#initialize byte string
 
 # url = 'https://9to5google.com/2018/05/22/youtube-music-premium-launch/'
-# url = 'https://www.cnn.com/politics/live-news/white-house-press-briefing-05-22-18/index.html'
-url = 'https://gizmodo.com/razers-redesigned-blade-gaming-laptop-gets-bigger-burl-1826216941'
+url = 'https://www.cnn.com/politics/live-news/white-house-press-briefing-05-22-18/index.html'
+# url = 'https://gizmodo.com/razers-redesigned-blade-gaming-laptop-gets-bigger-burl-1826216941'
+# url = 'https://wordpress.stackexchange.com/questions/240629/how-can-i-link-users-across-multiple-subdomains'
 response = requests.get(url, stream=True)
-# size = sum(len(chunk) for chunk in response.iter_content())
-# print(response.text)
+
 for chunk in response.iter_content():
     size += len(chunk)
     html += chunk
 
-# print(html)
-# parsed_uri = urlparse(url)
-# domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-domain = urlparse(url)[1]
+domain = '{}.{}'.format(tldextract.extract(url).domain, tldextract.extract(url).suffix)
 print ('Domain: ',domain)
 
 soup = BeautifulSoup(html,'html.parser')
@@ -35,18 +29,19 @@ for link in soup.find_all('a'):
         links.append(link.get('href'))
     print(link.get('href'))
 
-# linkstodomain = SoupStrainer('a', href=re.compile(domain))
 print('--------------')
-# print(linkstodomain)
+
+domain_links = []
 for l in links:
     # print(l)
     if domain in urlparse(l)[1] or l.startswith('/'):
         print(l)
+        domain_links.append(l)
 
-# with open()
 
 print('Size: {} bytes'.format(size))
-# print(html)
+print(len(domain_links))
+print(tldextract.extract(url))
 
 def validate_url():
     pass
